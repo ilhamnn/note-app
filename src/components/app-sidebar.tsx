@@ -28,27 +28,22 @@ import {
 const items = [
   {
     title: "Home",
-    url: "#",
     icon: Home,
   },
   {
     title: "Create Note",
-    url: "#",
     icon: NotepadText,
   },
   {
     title: "Search",
-    url: "#",
     icon: Search,
   },
   {
     title: "Archive",
-    url: "#",
     icon: Archive,
   },
   {
     title: "Settings",
-    url: "#",
     icon: Settings,
   },
 ]
@@ -100,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuItem key={item.title}>
                   {item.icon === NotepadText ? (
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                      <DropdownMenuTrigger asChild >
                         <SidebarMenuButton asChild>
                           <button className="flex items-center gap-2 w-full">
                             <item.icon />
@@ -152,7 +147,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   ) : (
                     <SidebarMenuButton asChild>
                       <a
-                        href={item.url}
                         className="flex items-center gap-2 w-full"
                       >
                         <item.icon />

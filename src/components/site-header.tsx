@@ -1,7 +1,6 @@
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import {  Sun, Moon } from "lucide-react"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 interface TopbarProps {
   onToggle: () => void
@@ -20,9 +19,9 @@ export function SiteHeader({lightMode,onToggle}:TopbarProps) {
         />
         <h1 className="text-foreground font-medium">Note App</h1>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={onToggle}>
-            {!lightMode ? <Sun className="w-5 h-5 text-white" /> : <Moon className="w-5 h-5 text-black" />}
-          </Button>
+          <button onClick={onToggle} >
+              <ThemeToggle  />
+          </button>
         </div>
       </div>
     </header>

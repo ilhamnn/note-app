@@ -25,42 +25,43 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const items = [
-  {
-    title: "Home",
-    icon: Home,
-  },
-  {
-    title: "Create Note",
-    icon: NotepadText,
-  },
-  {
-    title: "Search",
-    icon: Search,
-  },
-  {
-    title: "Archive",
-    icon: Archive,
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-  },
+const items: Array<{ title: string; value: TabType; icon: any }> = [
+  { title: "Home", value: "home", icon: Home },
+  { title: "Create Note", value: "create", icon: NotepadText },
+  { title: "Search", value: "search", icon: Search },
+  { title: "Archive", value: "archive", icon: Archive },
 ]
 
 const colorOptions = [
-  { color: "bg-red-400" },
-  { color: "bg-blue-400" },
-  { color: "bg-green-300" },
-  { color: "bg-yellow-300" },
-  { color: "bg-indigo-400" },
-  { color: "bg-violet-300" },
-  { color: "bg-teal-300" },
-  { color: "bg-fuchsia-300" }
+  { name: "Red", color: "bg-red-400" },
+  { name: "Blue", color: "bg-blue-400" },
+  { name: "Green", color: "bg-green-300" },
+  { name: "Yellow", color: "bg-yellow-300" },
+  { name: "Indigo", color: "bg-indigo-400" },
+  { name: "Violet", color: "bg-violet-300" },
+  { name: "Teal", color: "bg-teal-300" },
+  { name: "Fuchsia", color: "bg-fuchsia-300" },
 ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type TabType = "home" | "create" | "search" | "archive" 
+
+type SidebarProps = {
+  onTab: TabType
+  onTabChange: (tab: TabType) => void
+  onColorChange?: (color: string) => void
+  onSearch?: (query: string) => void
+  variant?: "sidebar" | "floating" | "inset"
+}
+
+export function AppSidebar({ 
+  variant, 
+  onTab, 
+  onTabChange, 
+  onColorChange, 
+  onSearch 
+}: SidebarProps) {
   const [searchActive, setSearchActive] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const searchRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -78,65 +79,65 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [searchActive])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleSearchSubmit = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
+      if (onSearch && searchQuery.trim()) {
+        onSearch(searchQuery)
+      }
       setSearchActive(false)
     }
   }
-  
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearchQuery(value)
+    if (onSearch) {
+      onSearch(value)
+    }
+  }
+
+  const handleColorSelect = (color: string) => {
+    if (onColorChange) {
+      onColorChange(color)
+    }
+  }
+
   return (
-    <Sidebar {...props}>
+    <Sidebar variant={variant}>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.icon === NotepadText ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild >
-                        <SidebarMenuButton asChild>
-                          <button className="flex items-center gap-2 w-full">
-                            <item.icon />
-                            <span>{item.title}</span>
-                          </button>
-                        </SidebarMenuButton>
-                      </DropdownMenuTrigger>
-
-                      <DropdownMenuContent align="start" className="w-40 grid grid-cols-4 grid-rows-3 gap-1">
-                        <DropdownMenuLabel className="col-span-4">Pilih Warna</DropdownMenuLabel>
-                        {colorOptions.map((colorItem) => (
-                          <DropdownMenuItem
-                            key={colorItem.color}
-                            className="items-center gap-2 cursor-pointer w-fit"
-                          >
-                            <span
-                              className={`w-4 h-4 rounded-full ${colorItem.color}`}
-                            />
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : item.icon === Search ? (
+                <SidebarMenuItem key={item.value}>
+                  {/* Search dengan Input */}
+                  {item.icon === Search ? (
                     <div ref={containerRef}>
                       {searchActive ? (
                         <InputGroup>
                           <InputGroupInput
-                            placeholder="Search..."
+                            placeholder="Search notes..."
                             ref={searchRef}
-                            onKeyDown={handleKeyDown}
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            onKeyDown={handleSearchSubmit}
                             autoFocus
                           />
                           <InputGroupAddon>
-                            <Search />
+                            <Search className="w-4 h-4" />
                           </InputGroupAddon>
                         </InputGroup>
                       ) : (
                         <SidebarMenuButton asChild>
                           <button
-                            className="flex items-center gap-2 w-full"
-                            onClick={() => setSearchActive(true)}
+                            className={`flex items-center gap-2 w-full ${
+                              onTab === item.value ? "bg-muted" : ""
+                            }`}
+                            onClick={() => {
+                              setSearchActive(true)
+                              onTabChange(item.value)
+                            }}
                           >
                             <item.icon />
                             <span>{item.title}</span>
@@ -146,12 +147,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </div>
                   ) : (
                     <SidebarMenuButton asChild>
-                      <a
-                        className="flex items-center gap-2 w-full"
+                      <button
+                        onClick={() => onTabChange(item.value)}
+                        className={`flex items-center gap-2 w-full ${
+                          onTab === item.value ? "bg-muted" : ""
+                        }`}
                       >
                         <item.icon />
                         <span>{item.title}</span>
-                      </a>
+                      </button>
                     </SidebarMenuButton>
                   )}
                 </SidebarMenuItem>

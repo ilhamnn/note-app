@@ -3,14 +3,30 @@
 import { useState, useEffect } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
-import { Kartu } from "@/components/kartu"
+import { Hero } from "@/tools/hero/hero"
+import { CreateTab } from "@/tools/add note/create-tab"
+import { SearchTab } from "@/tools/search/search"
+import { ArchiveTab } from "@/tools/archive/achive"
+
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { getNotes, getArchivedNotes, Note } from "@/lib/notes-api"
+
+type TabType = "home" | "create" | "search" | "archive" 
 
 export default function Page() {
-  const [lightMode, setLightMode] = useState(true)
+  const [lightMode, setLightMode] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabType>("home")
+  const [selectedColor, setSelectedColor] = useState("bg-yellow-300")
+  const [searchQuery, setSearchQuery] = useState("")
+  
+  // State untuk notes
+  const [notes, setNotes] = useState<Note[]>([])
+  const [archivedNotes, setArchivedNotes] = useState<Note[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
   useEffect(() => {
     if (lightMode) {
       document.documentElement.classList.remove('dark')
@@ -18,6 +34,71 @@ export default function Page() {
       document.documentElement.classList.add('dark')
     }
   }, [lightMode])
+
+  // Fetch notes saat component mount
+  useEffect(() => {
+    fetchNotes()
+    fetchArchivedNotes()
+  }, [])
+
+  const fetchNotes = async () => {
+    setIsLoading(true)
+    try {
+      const data = await getNotes()
+      setNotes(data)
+    } catch (error) {
+      console.error("Failed to fetch notes:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const fetchArchivedNotes = async () => {
+    try {
+      const data = await getArchivedNotes()
+      setArchivedNotes(data)
+    } catch (error) {
+      console.error("Failed to fetch archived notes:", error)
+    }
+  }
+
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color)
+  }
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
+  }
+
+ const renderContent = () => {
+  switch (activeTab) {
+    case "home":
+      return <Hero notes={notes} isLoading={isLoading} onRefresh={fetchNotes} onNavigateToCreate={() => setActiveTab("create")}/>
+    case "create":
+      return (
+         <CreateTab 
+          selectedColor={selectedColor} 
+          onColorChange={handleColorChange}
+          onNoteCreated={fetchNotes}
+          onNavigateHome={() => setActiveTab("home")} // ← Tambah ini
+        />
+      )
+    case "search":
+      return <SearchTab query={searchQuery} notes={notes} />
+    case "archive":
+      return (
+        <ArchiveTab 
+          archivedNotes={archivedNotes}
+          onRefresh={() => {
+            fetchNotes()
+            fetchArchivedNotes()
+          }}
+        />
+      )
+    default:
+      return <Hero notes={notes} isLoading={isLoading} onRefresh={fetchNotes} />
+  }
+}
 
   return (
     <SidebarProvider
@@ -28,24 +109,26 @@ export default function Page() {
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar 
+        variant="inset" 
+        onTab={activeTab} 
+        onTabChange={setActiveTab}
+        onColorChange={handleColorChange}
+        onSearch={handleSearch}
+      />
+      
       <SidebarInset>
-        <SiteHeader lightMode={lightMode} onToggle={() => setLightMode(!lightMode)} />
+        <SiteHeader 
+          lightMode={lightMode} 
+          onToggle={() => setLightMode(!lightMode)} 
+        />
+        
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-2 gap-y-4 px-2 sm:px-4 lg:px-6">
-                  <Kartu id="1" title="Catatan Awal" note="Notess" color="bg-red-400" date={new Date().toString()} />
-                  <Kartu id="2" title="Belajar React" note="Pelajari useEffect dan state management" color="bg-blue-400" date={new Date().toString()} />
-                  <Kartu id="3" title="Rencana Minggu Ini" note="Benerin IoT project dan commit ke GitHub" color="bg-green-400" date={new Date().toString()} />
-                  <Kartu id="4" title="Tugas Kampus" note="Laporan data preprocessing harus dikumpul Jumat" color="bg-yellow-400" date={new Date().toString()} />
-                  <Kartu id="5" title="Ide Project" note="Catatan app pakai Next.js + Supabase" color="bg-purple-400" date={new Date().toString()} />
-                  <Kartu id="6" title="Reminder" note="Jangan lupa push branch baru" color="bg-orange-400" date={new Date().toString()} />
-                  <Kartu id="7" title="Latihan Koding" note="Buat form dengan useRef dan handleSubmit" color="bg-pink-400" date={new Date().toString()} />
-                  <Kartu id="8" title="Eksperimen" note="Tes API public buat fetch data ke frontend" color="bg-teal-400" date={new Date().toString()} />
-                  <Kartu id="9" title="Notes Random" note="Coba gaya layout grid untuk cards" color="bg-lime-400" date={new Date().toString()} />
-                  <Kartu id="10" title="Daily Log" note="Belajar destructuring props dan component reuse" color="bg-cyan-400" date={new Date().toString()} />
-                </div>
+              <div className="gap-x-2 gap-y-4 px-2 sm:px-4 lg:px-6">
+                {renderContent()}
+              </div>
             </div>
           </div>
         </div>
